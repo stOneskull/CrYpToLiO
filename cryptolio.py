@@ -111,6 +111,94 @@ def makewindow(): ########title info
     return window
 
 
+def pie():
+
+    coins = Coin.coins
+
+    pc = Coin.total_now * 0.01
+
+    outs = [
+        coin for coin in coins if coin.total
+        and coin.total < 4.6*pc
+        ]
+
+    others = sum(coin.total for coin in outs)
+
+    labels = [coin for coin in coins if coin.total >= 4.6*pc]
+    random.shuffle(labels)
+
+    sizes = [coin.total for coin in labels]
+
+    if others:
+
+        if len(outs) > 1:
+            strouts = ', '.join(str(out) for out in outs)
+            labels.append('Others\n(' + strouts + ')')
+            sizes.append(float('{:.2f}'.format(others)))
+        else:
+            uno = outs[0]
+            labels.append(str(uno))
+            sizes.append(uno.total)
+
+    boom = [
+        0.6 if wedge < 4*pc else
+        0.2 if wedge < 10*pc else
+        0.1 if wedge < 15*pc else
+        0.0 for wedge in sizes
+        ]
+
+    colors = [
+        'red', 'tan', 'powderblue',
+        'green', 'olive', 'purple',
+        'silver', 'springgreen', 'orange',
+        'deepskyblue', 'yellow',
+        'blue', 'papayawhip',
+        ]
+
+    pyplot.figure().canvas.set_window_title('your cryptolio pie')
+
+    _, __, wedgetext = pyplot.pie(
+        sizes, labels=labels, colors=colors, explode=boom,
+        wedgeprops={'linewidth': 2, 'edgecolor': 'darkorange'},
+        autopct='', startangle=275, #shadow=True,
+        )
+
+    for i, wedge in enumerate(wedgetext):
+        wedge.set_text(
+            "{:.1f}%".format(sizes[i] / Coin.total_now * 100)
+            )
+
+            # "${}\n{:.1f}%".format(
+                # sizes[i], sizes[i] / Coin.total_now * 100))
+
+    pyplot.axis('equal')
+
+    pyplot.show()
+
+
+def wait_a_bit(more):
+
+    if more < 2: more = 2
+    print('[..wait {} secs..]'.format(int(more)))
+
+
+def refresh_it():
+
+    watch = time.time() - Coin.time
+
+    if watch < 60:
+        wait_a_bit(60-watch)
+
+    else:
+        Coin.data = lookup()
+        if Coin.data is not None:
+            Coin.reset()
+            Coin.folio = folio()
+            Coin.coins = pandora()
+            print('[data updated]')
+            windolio()
+
+
 def windolio():
 
     window = Coin.window
@@ -182,107 +270,14 @@ def windolio():
 
     the_row += 1
 
-
-    def wait_a_bit(more):
-
-        if more < 2: more = 2
-        print('[..wait {} secs..]'.format(int(more)))
-
-
-    def refresh_it():
-
-        watch = time.time() - Coin.time
-
-        if watch < 60:
-            wait_a_bit(60-watch)
-
-        else:
-            Coin.data = lookup()
-            if Coin.data is not None:
-                Coin.reset()
-                Coin.folio = folio()
-                Coin.coins = pandora()
-                print('[data updated]')
-                windolio()
-
-
     fresh = Button(window, text='Refresh', bg='silver', command=refresh_it)
     fresh.grid(row=the_row, column=0)
-
 
     note = Label(window, text="(once per minute)", fg='grey55')
     note.grid(row=the_row, column=1)
 
-
-    def pie():
-
-        coins = Coin.coins
-
-        pc = Coin.total_now * 0.01
-
-        outs = [
-            coin for coin in coins if coin.total
-            and coin.total < 4*pc
-            ]
-
-        others = sum(coin.total for coin in outs)
-
-        labels = [coin for coin in coins if coin.total >= 4*pc]
-        random.shuffle(labels)
-
-        sizes = [coin.total for coin in labels]
-
-
-        if others:
-
-            if len(outs) > 1:
-                strouts = ', '.join(str(out) for out in outs)
-                labels.append('Others\n(' + strouts + ')')
-                sizes.append(float('{:.2f}'.format(others)))
-            else:
-                uno = outs[0]
-                labels.append(str(uno))
-                sizes.append(uno.total)
-
-        boom = [
-            0.6 if wedge < 4*pc else
-            0.2 if wedge < 10*pc else
-            0.1 if wedge < 20*pc else
-            0.0 for wedge in sizes
-            ]
-
-        colors = [
-            'red', 'tan', 'powderblue',
-            'green', 'olive', 'purple',
-            'silver', 'springgreen', 'orange',
-            'deepskyblue', 'yellow',
-            'blue', 'papayawhip',
-            ]
-
-        pyplot.figure().canvas.set_window_title('your cryptolio pie')
-
-        _, __, wedgetext = pyplot.pie(
-            sizes, labels=labels, colors=colors, explode=boom,
-            wedgeprops={'linewidth': 2, 'edgecolor': 'darkorange'},
-            autopct='', startangle=60, #shadow=True,
-            )
-
-        for i, wedge in enumerate(wedgetext):
-            wedge.set_text(
-                "${}\n{:.1f}%".format(
-                    sizes[i], sizes[i] / Coin.total_now * 100))
-
-        pyplot.axis('equal')
-
-        pyplot.show()
-
-
-
-
     graph = Button(window, text="Make Pie", bg='silver', command=pie)
-
     graph.grid(row=the_row, column=6)
-
 
     window.mainloop()
 
@@ -315,6 +310,8 @@ def printscreen():
     print('---------------------------')
 
     print()
+
+    return windolio
 
 
 def pandora():
@@ -351,13 +348,13 @@ def folio():
     # porto = []
 
     # print(
-        # '''
+        # ''' intro stuff
 
 
         # ''')
 
     # print(
-        # '''
+        # ''' option text
 
 
         # ''')
@@ -365,23 +362,23 @@ def folio():
     # while True:
         # crypto = input('Ticker: ').strip().upper()
         # if crypto == Coin.data['symbol']:
-            # pass
+            # something somethimg..
 
 
     porto = [
-        # {
-            # 'symbol': 'BTC',
-            # 'holding': 0,
-            # 'price_paid': 0
-        # },
-        # {
-            # 'symbol': 'LTC',
-            # 'holding': 0.1,
-            # 'price_paid': 140
-        # },
+        {
+            'symbol': 'BTC',
+            'holding': 0.42,
+            'price_paid': 5000
+        },
+        {
+            'symbol': 'LTC',
+            'holding': 1,
+            'price_paid': 140
+        },
         {
             'symbol': 'ETH',
-            'holding': 0.4,
+            'holding': 1,
             'price_paid': 350
         },
         {
@@ -391,22 +388,22 @@ def folio():
         },
         {
             'symbol': 'KIN',
-            'holding': 1856100,
-            'price_paid': 0.00016
+            'holding': 1000000,
+            'price_paid': 0.00015
         },
-        # {
-            # 'symbol': 'XRP',
-            # 'holding': 20,
-            # 'price_paid': 0.50
-        # },
+        {
+            'symbol': 'XRP',
+            'holding': 2100,
+            'price_paid': 0.50
+        },
         {
             'symbol': 'ZRX',
-            'holding': 47,
-            'price_paid': 1.54
+            'holding': 230,
+            'price_paid': 1.00
         },
         {
             'symbol': 'XLM',
-            'holding': 874,
+            'holding': 1000,
             'price_paid': 0.25
         },
         ]
@@ -425,11 +422,9 @@ def stone():
 
     Coin.coins = pandora()
 
-    printscreen()
-
     Coin.window = makewindow()
 
-    return windolio
+    return printscreen
 
 
 def wonderwall(dance):
