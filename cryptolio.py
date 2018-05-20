@@ -4,9 +4,10 @@
 
 import time
 import random
-from tkinter import Tk, PhotoImage, Label, Button, N, S, E, W
-from matplotlib import pyplot
 import requests
+
+from matplotlib import pyplot
+from tkinter import Tk, PhotoImage, Label, Button, N, S, E, W
 
 
   #####################
@@ -17,11 +18,11 @@ import requests
  ###   codemy.com  ###
   #####################
 
-__version__ = '0.2.5'
+__version__ = '0.2.7'
 
-########### - make intro
-## to do ## - add user input for folio details
-########### - use data from livecoinwatch.com / coincap.io
+########### - make intro, settings, buttons
+## to do ## - add user input for folio details, save data
+########### - use data from livecoinwatch.com or coincap.io
 
 
 Heart = True
@@ -32,6 +33,8 @@ class Coin:
     time = time.time()
     total_paid = 0
     total_now = 0
+    show_pie_totals = 0
+    user = 0
 
     def __init__(self, mycoin, coinup):
 
@@ -44,8 +47,7 @@ class Coin:
 
         if self.holding:
             self.profit_per = '{:.2f}'.format(
-                self.price_now - self.price_paid
-                )
+                self.price_now - self.price_paid)
         else:
             self.profit_per = 0
 
@@ -86,8 +88,14 @@ class Coin:
 
     @staticmethod
     def reset():
-        Coin.total_paid, Coin.total_now = 0, 0
+        Coin.total_paid = 0
+        Coin.total_now = 0
         Coin.time = time.time()
+
+
+class Champ:
+    def __init__(self):
+        Coin.user += 1
 
 
 def clr(lines=99):
@@ -97,17 +105,15 @@ def clr(lines=99):
 def bye():
     global Heart
     Heart = False
-    print('bye now')
+    print('\nbye now\n')
 
 
 def makewindow(): ########title info
 
     window = Tk()
     window.title('.... .. CrYpToLiO .. ...')
-
     icon = PhotoImage(file='swirl.gif')
     window.tk.call('wm', 'iconphoto', window._w, icon)
-
     return window
 
 
@@ -124,7 +130,7 @@ def pie():
 
     others = sum(coin.total for coin in outs)
 
-    labels = [coin for coin in coins if coin.total >= 4.6*pc]
+    labels = [coin for coin in coins if coin not in outs]
     random.shuffle(labels)
 
     sizes = [coin.total for coin in labels]
@@ -133,7 +139,7 @@ def pie():
 
         if len(outs) > 1:
             strouts = ', '.join(str(out) for out in outs)
-            labels.append('Others\n(' + strouts + ')')
+            labels.append('\n\nOthers\n(' + strouts + ')')
             sizes.append(float('{:.2f}'.format(others)))
         else:
             uno = outs[0]
@@ -141,9 +147,9 @@ def pie():
             sizes.append(uno.total)
 
     boom = [
-        0.6 if wedge < 4*pc else
+        0.4 if wedge < 5*pc else
         0.2 if wedge < 10*pc else
-        0.1 if wedge < 15*pc else
+        0.1 if wedge < 20*pc else
         0.0 for wedge in sizes
         ]
 
@@ -155,7 +161,9 @@ def pie():
         'blue', 'papayawhip',
         ]
 
-    pyplot.figure().canvas.set_window_title('your cryptolio pie')
+    fig = pyplot.figure()
+    fig.canvas.set_window_title('your cryptolio pie')
+    fig.set_facecolor('palegreen')
 
     _, __, wedgetext = pyplot.pie(
         sizes, labels=labels, colors=colors, explode=boom,
@@ -164,15 +172,15 @@ def pie():
         )
 
     for i, wedge in enumerate(wedgetext):
+
         wedge.set_text(
-            "{:.1f}%".format(sizes[i] / Coin.total_now * 100)
+            "${}\n{:.1f}%".format(sizes[i], sizes[i] / pc)
+            if Coin.show_pie_totals
+            else
+            "{:.1f}%".format(sizes[i] / pc)
             )
 
-            # "${}\n{:.1f}%".format(
-                # sizes[i], sizes[i] / Coin.total_now * 100))
-
     pyplot.axis('equal')
-
     pyplot.show()
 
 
@@ -188,7 +196,6 @@ def refresh_it():
 
     if watch < 60:
         wait_a_bit(60-watch)
-
     else:
         Coin.data = lookup()
         if Coin.data is not None:
@@ -199,26 +206,48 @@ def refresh_it():
             windolio()
 
 
+def toggle():
+
+    if Coin.show_pie_totals:
+        Coin.show_pie_totals = 0
+        print('[pie values off]')
+    else:
+        Coin.show_pie_totals = 1
+        print('[pie values on]')
+
+
 def windolio():
 
     window = Coin.window
+
+
+# Column Headers, Row 0 #
 
     columns = [
         'Rank', 'Name', 'Price Now',
         '1 Hour', '1 Day', '1 Week',
         'Holding', 'Spent', 'Value', 'Profit',
-        ] # 'Price Paid', 'Profit Per',
+        # 'Price Paid', 'Profit Per',
+        ]
 
     for colnum, colhead in enumerate(columns):
 
-        header = Label(window, text=colhead, font='bold',
-                       bg=['yellow3', 'gold3'][colnum%2])
-        header.grid(row=0, column=colnum, sticky=N+S+E+W)
+        header = Label(
+            window, text=colhead, font='bold',
+            bg=['yellow3', 'gold3'][colnum%2]
+            )
+        header.grid(
+            row=0, column=colnum, sticky=N+S+E+W
+            )
+
+# Column Headers, Done #
+
+
+# Row Entries #
 
     the_row = 1
 
     for coin in Coin.coins:
-
         for colnum, colval in enumerate(columns):
 
             if colval.startswith('1'):
@@ -231,54 +260,104 @@ def windolio():
 
             cell = Label(
                 window, text=coin.columns[colval],
-                fg=color, bg=['yellow2', 'gold2'][colnum%2]
-            )
+                fg=color,
+                bg=['yellow2', 'gold2'][colnum%2]
+                )
             cell.grid(row=the_row, column=colnum, sticky=N+S+E+W)
 
         the_row += 1
 
+# Row Entries, Done #
+
+
+# Totals #
 
     coin_totals = [
-        (
-            'Total Spent',
-            '${:.2f}'.format(Coin.total_paid)
-        ),
-        (
-            'Total Value',
-            '${:.2f}'.format(Coin.total_now)
-        ),
-        (
-            'Total Profit',
-            '${:.2f}'.format(Coin.total_now - Coin.total_paid)
-        ),
+        ('Total Spent',
+         '${:.2f}'.format(Coin.total_paid)
+         ),
+        ('Total Value',
+         '${:.2f}'.format(Coin.total_now)
+         ),
+        ('Total Profit',
+         '${:.2f}'.format(Coin.total_now - Coin.total_paid)
+         ),
         ]
 
-    the_col = 7
+    the_col = (
+        columns.index('Spent') if 'Spent' in columns
+        else -3
+        )
 
     for label, amount in coin_totals:
 
-        cell = Label(window, text=label, bg='silver')
-        cell.grid(row=the_row, column=the_col, sticky=S)
+        cell = Label(
+            window, text=label, bg='silver',
+            #font=('bold' if 'Value' in label else None)
+            )
+        cell.grid(
+            row=the_row, column=the_col, sticky=S, pady=5
+            )
 
         the_row += 1
 
-        cell = Label(window, text=amount, bg='silver')
-        cell.grid(row=the_row, column=the_col)
+        cell = Label(
+            window, text=amount, bg='silver',
+            font=('bold' if 'Value' in label else None)
+            )
+        cell.grid(row=the_row, column=the_col, sticky=N)
 
         the_row -= 1
         the_col += 1
 
     the_row += 1
 
-    fresh = Button(window, text='Refresh', bg='silver', command=refresh_it)
-    fresh.grid(row=the_row, column=0)
+# Totals, Done #
+
+
+# Refresh Button
+    fresh = Button(
+        window, text='Refresh', bg='silver',
+        command=refresh_it
+        )
+    fresh.grid(
+        row=the_row, column=0,
+        padx=5, pady=5
+        )
 
     note = Label(window, text="(once per minute)", fg='grey55')
     note.grid(row=the_row, column=1)
 
-    graph = Button(window, text="Make Pie", bg='silver', command=pie)
-    graph.grid(row=the_row, column=6)
+# Pie Button
+    graph = Button(
+        window, text="Make Pie", bg='silver',
+        command=pie
+        )
+    graph.grid(
+        row=the_row,
+        column=(
+            columns.index('Holding')
+            if 'Holding' in columns
+            else -4
+            )
+        )
 
+# Toggle Pie dollar values
+    tog = Button(
+        window, text="Toggle Pie", bg='silver',
+        command=toggle
+        )
+    tog.grid(
+        row=the_row-1,
+        column=(
+            columns.index('Holding')
+            if 'Holding' in columns
+            else -4
+            ),
+        padx=5, pady=5
+        )
+
+# Gooey
     window.mainloop()
 
     return bye
@@ -290,47 +369,46 @@ def printscreen():
 
     for coin in Coin.coins:
 
-        print(coin.name)
+        print(coin)
         print(' Price: $' + str(coin.price_now))
         print(' Rank:', coin.rank)
         print(' Holding:', coin.holding)
         print(' Paid: ${0:.2f}'.format(coin.paid))
         print(' Now: ${}'.format(coin.total))
-
         print('---------------------------')
 
     print()
-
-    print(
-        'Portfolio value: ${0:.2f}'.format(Coin.total_now))
-
+    print('Portfolio value: ${0:.2f}'.format(Coin.total_now))
     print('Portfolio profit: ${0:.2f}'.format(
         Coin.total_now - Coin.total_paid))
-
     print('---------------------------')
-
     print()
-
-    return windolio
 
 
 def pandora():
 
-    return [
+    # box = []
+    # for coin in Coin.data:
+        # for mycoin in Coin.folio:
+            # if mycoin['symbol'] == coin['symbol']:
+                # box.append(Coin(mycoin, coin))
+
+    box = [
         Coin(mycoin, coin)
-        for mycoin in Coin.folio
         for coin in Coin.data
+        for mycoin in Coin.folio
         if mycoin['symbol'] == coin['symbol']
         ]
+
+    return box
 
 
 def lookup():
 
     lookups = {
         'CoinMarketCap':
-        'https://api.coinmarketcap.com/v1/ticker/?start=0&limit=300',
+        'https://api.coinmarketcap.com/v1/ticker/?start=0&limit=500',
         }
-
     chose = lookups['CoinMarketCap']
 
     try:
@@ -338,7 +416,6 @@ def lookup():
         return data.json()
     except:
         print('Cannot update - Try later')
-        return None
 
 
 def folio():
@@ -349,23 +426,28 @@ def folio():
 
     # print(
         # ''' intro stuff
-
+# we will be entering in details of each cryptocurrency
+# you can choose to watch other coins by entering them and choosing 0 balance
+# for the paid price option you can give a rough average
+# this average will be used when buying more at a later date
+# when buying more you will enter the price paid for that lot
 
         # ''')
 
     # print(
         # ''' option text
-
+# enter the ticker name listed on coinmarketcap
+# eg. bitcoin is BTC ripple is XRP ethereum is ETH stellar is XLM
 
         # ''')
 
-    # while True:
+    # while Heart:
         # crypto = input('Ticker: ').strip().upper()
         # if crypto == Coin.data['symbol']:
             # something somethimg..
 
 
-    porto = [
+    sample_porto = [
         {
             'symbol': 'BTC',
             'holding': 0.42,
@@ -408,26 +490,22 @@ def folio():
         },
         ]
 
+    porto = sample_porto
     return porto
 
 
-def stone():
-
+def rock():
     Coin.data = lookup()
-
     if Coin.data is None:
         return bye
-
     Coin.folio = folio()
-
     Coin.coins = pandora()
-
     Coin.window = makewindow()
+    printscreen()
+    return windolio
 
-    return printscreen
 
-
-def wonderwall(dance):
+def main(dance):
     'rock n roll'
     while Heart is True:
         step = dance()
@@ -435,5 +513,5 @@ def wonderwall(dance):
 
 
 if __name__ == '__main__':
-
-    wonderwall(stone)
+    user = Champ()
+    main(rock)
