@@ -220,16 +220,15 @@ def windolio():
 
     window = Coin.window
 
-
-# Column Headers, Row 0 #
-
     columns = [
-        'Rank', 'Name', 'Price Now',
+        'Rank', 'Price Now', 'Name',
         '1 Hour', '1 Day', '1 Week',
-        'Holding', 'Spent', 'Value', 'Profit',
+        'Holding',
+        'Spent', 'Value', 'Profit',
         # 'Price Paid', 'Profit Per',
         ]
 
+# Column Headers, Row 0 #
     for colnum, colhead in enumerate(columns):
 
         header = Label(
@@ -315,47 +314,47 @@ def windolio():
 # Totals, Done #
 
 
-# Refresh Button
-    fresh = Button(
-        window, text='Refresh', bg='silver',
-        command=refresh_it
-        )
-    fresh.grid(
-        row=the_row, column=0,
-        padx=5, pady=5
-        )
+    if 'Rank' in columns:
 
-    note = Label(window, text="(once per minute)", fg='grey55')
-    note.grid(row=the_row, column=1)
-
-# Pie Button
-    graph = Button(
-        window, text="Make Pie", bg='silver',
-        command=pie
-        )
-    graph.grid(
-        row=the_row,
-        column=(
-            columns.index('Holding')
-            if 'Holding' in columns
-            else -4
+    # Refresh Button
+        fresh = Button(
+            window, text='Refresh', bg='silver',
+            command=refresh_it
             )
-        )
+        fresh.grid(
+            row=the_row, column=columns.index('Rank'),
+            padx=5, pady=5
+            )
 
-# Toggle Pie dollar values
-    tog = Button(
-        window, text="Toggle Pie", bg='silver',
-        command=toggle
-        )
-    tog.grid(
-        row=the_row-1,
-        column=(
-            columns.index('Holding')
-            if 'Holding' in columns
-            else -4
-            ),
-        padx=5, pady=5
-        )
+        note = Label(window, text="(once per minute)", fg='grey55')
+        note.grid(row=the_row, column=1)
+
+    if 'Holding' in columns:
+
+    # Pie Button
+        graph = Button(
+            window, text="Make Pie", bg='silver',
+            command=pie
+            )
+        graph.grid(
+            row=the_row,
+            column=columns.index('Holding')
+            )
+
+    # Toggle Pie dollar values
+        tog = Button(
+            window, text="Toggle", bg='silver',
+            command=toggle
+            )
+        tog.grid(
+            row=the_row-1,
+            column=(
+                columns.index('Holding')
+                if 'Holding' in columns
+                else -4
+                ),
+            padx=5, pady=5
+            )
 
 # Gooey
     window.mainloop()
@@ -397,7 +396,8 @@ def pandora():
         Coin(mycoin, coin)
         for coin in Coin.data
         for mycoin in Coin.folio
-        if mycoin['symbol'] == coin['symbol']
+        if mycoin['symbol']
+        == coin['symbol']
         ]
 
     return box
@@ -494,7 +494,7 @@ def folio():
     return porto
 
 
-def rock():
+def step():
     Coin.data = lookup()
     if Coin.data is None:
         return bye
@@ -505,7 +505,7 @@ def rock():
     return windolio
 
 
-def main(dance):
+def main(dance=step):
     'rock n roll'
     while Heart is True:
         step = dance()
@@ -514,4 +514,4 @@ def main(dance):
 
 if __name__ == '__main__':
     user = Champ()
-    main(rock)
+    main()
