@@ -18,10 +18,10 @@ from tkinter import Tk, PhotoImage, Label, Button, N, S, E, W
  ###   codemy.com  ###
   #####################
 
-__version__ = '0.2.7'
+__version__ = '0.2.8'
 
-########### - make intro, settings, buttons
-## to do ## - add user input for folio details, save data
+########### - intro, settings, buttons
+## to do ## - add user input for folio details, save user data
 ########### - use data from livecoinwatch.com or coincap.io
 
 
@@ -35,6 +35,7 @@ class Coin:
     total_now = 0
     show_pie_totals = 0
     user = 0
+    row = 0
 
     def __init__(self, mycoin, coinup):
 
@@ -109,7 +110,7 @@ def bye():
 
 def makewindow():
     window = Tk()
-    window.title('.... .. CrYpToLiO .. ... ' + __version__)
+    window.title(' . .... .. CrYpToLiO .. ... ' + __version__)
     icon = PhotoImage(file='swirl.gif')
     window.tk.call('wm', 'iconphoto', window._w, icon)
     return window
@@ -173,7 +174,8 @@ def pie():
 
         wedge.set_text(
             "${}\n{:.1f}%".format(sizes[i], sizes[i] / pc)
-            if Coin.show_pie_totals
+            if
+            Coin.show_pie_totals
             else
             "{:.1f}%".format(sizes[i] / pc)
             )
@@ -184,18 +186,17 @@ def pie():
 
 def wait_a_bit(more):
     if more < 2: more = 2
-    print('[..wait {} secs..]'.format(int(more)))
+    print('[..wait {} secs..]'.format(more))
 
 
 def refresh_it():
     watch = time.time() - Coin.time
     if watch < 60:
-        wait_a_bit(60-watch)
+        wait_a_bit(int(60-watch))
     else:
         Coin.data = lookup()
         if Coin.data is not None:
             Coin.reset()
-            Coin.folio = folio()
             Coin.coins = pandora()
             print('[data updated]')
             windolio()
@@ -208,54 +209,55 @@ def toggle():
     else:
         Coin.show_pie_totals = 1
         print('[pie values on]')
+    windolio('togg')
 
 
-def windolio():
+def windolio(what='all'):
 
     window = Coin.window
 
-    columns = [ # keep in blocks
-        'Rank', 'Price Now', 'Name',
-        '1 Hour', '1 Day', '1 Week',
-        'Holding',
-        'Spent', 'Value', 'Profit',
-        # 'Price Paid', 'Profit Per',
+    columns = [ # keep in blocks, can switch blocks
+        'Rank', 'Price Now', 'Name', #leave rank, can switch other 2
+        #'Price Paid', 'Profit Per', #block
+        '1 Hour', '1 Day', '1 Week', #block
+        'Holding', #block
+        'Spent', 'Value', 'Profit', #block
         ]
 
-# Column Headers, Row 0
-    for col_num, col_name in enumerate(columns):
 
-        header = Label(window, text=col_name, font='bold',
-                       bg=['yellow3', 'gold3'][col_num%2])
-        header.grid(row=0, column=col_num, sticky=N+S+E+W)
-
-
-# Row Entries #
-
-    the_row = 1
-
-    for coin in Coin.coins:
-
+    def print_columns():
+        """Column Headers, Row 0"""
+        nonlocal columns
         for col_num, col_name in enumerate(columns):
-            cell = Label(
-                window,
-                text=coin.columns[col_name],
-                fg=('black' if not col_name.startswith('1') else
-                    'red' if float(coin.columns[col_name][:-2]) < 0
-                    else 'green'),
-                bg=['yellow2', 'gold2'][col_num%2]
-                )
-            cell.grid(row=the_row, column=col_num, sticky=N+S+E+W)
-
-        the_row += 1
-
-# Row Entries, Done #
+            header = Label(window, text=col_name, font='bold',
+                           bg=['yellow3', 'gold3'][col_num%2])
+            header.grid(row=0, column=col_num, sticky=N+S+E+W)
 
 
-# Totals #
+    def print_rows():
+        """Coin Entries, Row 1 ->"""
+        nonlocal columns
+        Coin.row = 1
+        for coin in Coin.coins:
+            for col_num, col_name in enumerate(columns):
+                cell = Label(
+                    window,
+                    text=coin.columns[col_name],
+                    fg=('black'
+                        if not col_name.startswith('1')
+                        else 'red'
+                        if float(coin.columns[col_name][:-2]) < 0
+                        else 'green'
+                        ),
+                    bg=['yellow2', 'gold2'][col_num%2]
+                    )
+                cell.grid(row=Coin.row, column=col_num, sticky=N+S+E+W)
+            Coin.row += 1
 
-    if 'Spent' in columns:
 
+    def print_spent():
+        """Totals"""
+        nonlocal columns
         coin_totals = [
             ('Total Spent',
              '${:.2f}'.format(Coin.total_paid)),
@@ -264,57 +266,76 @@ def windolio():
             ('Total Profit',
              '${:.2f}'.format(Coin.total_now - Coin.total_paid)),
             ]
-
         the_col = columns.index('Spent')
-
         for label, amount in coin_totals:
-
             cell = Label(window, text=label, bg='silver')
-            cell.grid(row=the_row, column=the_col, sticky=S, pady=5)
-            the_row += 1
-
+            cell.grid(row=Coin.row, column=the_col, sticky=S, pady=5)
             cell = Label(
                 window, text=amount, bg='silver',
                 font=('bold' if 'Value' in label else None))
-            cell.grid(row=the_row, column=the_col, sticky=N)
-            the_row -= 1
+            cell.grid(row=Coin.row+1, column=the_col, sticky=N)
             the_col += 1
 
-        the_row += 1
 
-# Totals, Done #
-
-
-# Refresh Button
-    if 'Rank' in columns:
-
+    def refresh_button():
+        nonlocal columns
         col_num = columns.index('Rank')
 
-        fresh = Button(
+        refresh = Button(
         window, text='Refresh', bg='silver', command=refresh_it
         )
-        fresh.grid(row=the_row, column=col_num, padx=5, pady=5)
+        refresh.grid(row=Coin.row+1, column=col_num, padx=5, pady=5)
 
         note = Label(window, text="(once per minute)", fg='grey55')
-        note.grid(row=the_row, column=col_num+1)
+        note.grid(row=Coin.row+1, column=col_num+1)
 
 
-# Pie of Holdings
-    if 'Holding' in columns:
-
+    def pie_buttons():
+        """Pie of Holdings"""
+        nonlocal columns
         the_col = columns.index('Holding')
 
         # Make Pie Button
         graph = Button(
             window, text="Make Pie", bg='silver', command=pie
             )
-        graph.grid(row=the_row, column=the_col)
+        graph.grid(row=Coin.row+1, column=the_col)
 
         # Toggle Pie dollar values
         tog = Button(
-            window, text="Toggle", bg='silver', command=toggle
+            window, text=(
+                "Pie $ on"
+                if
+                Coin.show_pie_totals
+                else
+                "Pie $ off"
+                ),
+            bg='silver', command=toggle
             )
-        tog.grid(row=the_row-1, column=the_col, padx=5, pady=5)
+        tog.grid(row=Coin.row, column=the_col, padx=5, pady=5)
+
+
+    includes = {
+        'Spent': print_spent,
+        'Rank': refresh_button,
+        'Holding': pie_buttons
+        }
+
+    loads = [
+        print_columns, print_rows
+        ]
+
+    for include in includes:
+        if include in columns:
+            loads.append(includes[include])
+
+    if what == 'all':
+        for load in loads:
+            load()
+    elif what == 'togg':
+        pie_buttons()
+    else:
+        print('whatchoo talkin bout willis')
 
 # Gooey
     window.mainloop()
