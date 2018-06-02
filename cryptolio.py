@@ -1,28 +1,30 @@
 #!/usr/bin/env python3
 
+#############################
+ ####     CrYpToLiO     ####
+  ####  by stOneskull  ####
+   #######################
+  ###### inspired by ######
+ ####### codemy.com  #######
+##2018#################2018##
+
 """ Funky Portfolio for Cryptocurrency """
 
-import time
-import random
+__version__ = '0.3.1'
+
+########### - intro, settings
+## to do ## - user input for folio details
+########### - user configurability
+
+
+from tkinter import Tk, PhotoImage, N, E
+from tkinter import Label, Button, W, S
+from matplotlib import pyplot as plot
+import webbrowser as web
 import requests
-
-from matplotlib import pyplot
-from tkinter import Tk, PhotoImage, Label, Button, N, S, E, W
-
-
-  #####################
- ##### CrYpToLiO #####
-### by stOneskull ###
-#####################
-###  inspired by  ###
- ###   codemy.com  ###
-  #####################
-
-__version__ = '0.2.8'
-
-########### - intro, settings, buttons
-## to do ## - add user input for folio details, save user data
-########### - use data from livecoinwatch.com or coincap.io
+import random
+import pickle
+import time
 
 
 Heart = True
@@ -33,37 +35,28 @@ class Coin:
     time = time.time()
     total_paid = 0
     total_now = 0
-    show_pie_totals = 0
-    user = 0
-    row = 0
 
-    def __init__(self, mycoin, coinup):
+    def __init__(self, mycoin, jsoncoin):
 
-        self.name = coinup['name']
-        self.rank = coinup['rank']
+        self.name = jsoncoin['name']
+        self.rank = jsoncoin['rank']
+        self.price_now = float(jsoncoin['price_usd'])
 
         self.holding = float(mycoin['holding'])
-        self.price_now = float(coinup['price_usd'])
         self.price_paid = float(mycoin['price_paid'])
 
         self.profit_per = (
             '{:.2f}'.format(self.price_now - self.price_paid)
             if self.holding else 0
-            )
+        )
 
-        self.one_hour = '{:.2f}%'.format(
-            float(coinup['percent_change_1h']))
-        self.one_day = '{:.2f}%'.format(
-            float(coinup['percent_change_24h']))
-        self.one_week = '{:.2f}%'.format(
-            float(coinup['percent_change_7d']))
+        self.one_hour = '{:.2f}%'.format(float(jsoncoin['percent_change_1h']))
+        self.one_day = '{:.2f}%'.format(float(jsoncoin['percent_change_24h']))
+        self.one_week = '{:.2f}%'.format(float(jsoncoin['percent_change_7d']))
 
-        self.total = float('{:.2f}'.format(
-            self.holding * self.price_now))
-        self.paid = float('{:.2f}'.format(
-            self.holding * self.price_paid))
-        self.profit = float('{:.2f}'.format(
-            self.total - self.paid))
+        self.total = float('{:.2f}'.format(self.holding * self.price_now))
+        self.paid = float('{:.2f}'.format(self.holding * self.price_paid))
+        self.profit = float('{:.2f}'.format(self.total - self.paid))
 
         Coin.total_paid += self.paid
         Coin.total_now += self.total
@@ -95,7 +88,8 @@ class Coin:
 
 class Champ:
     def __init__(self):
-        Coin.user += 1
+        self.window = makewindow()
+        self.folio = folio()
 
 
 def clr(lines=99):
@@ -105,159 +99,152 @@ def clr(lines=99):
 def bye():
     global Heart
     Heart = False
+    try:
+        with open('cryptdata', 'wb') as jar:
+            pickle.dump(user.folio, jar)
+    except: pass
     print('\nbye now\n')
+
+
+def windowtitle():
+    return(
+        ". .... .. CrYpToLiO .. ... " + __version__
+        + time.strftime(
+            " .. ... %Y-%m-%d %H:%M:%S ... ", time.localtime()
+            )
+        )
 
 
 def makewindow():
     window = Tk()
-    window.title(' . .... .. CrYpToLiO .. ... ' + __version__)
-    icon = PhotoImage(file='swirl.gif')
-    window.tk.call('wm', 'iconphoto', window._w, icon)
+    window.title(windowtitle())
+    window.row = 0
+    window.show_pie_totals = 0
+    try:
+        icon = PhotoImage(file='swirl.gif')
+        window.tk.call('wm', 'iconphoto', window._w, icon)
+    except: pass
     return window
 
 
 def pie():
+    "Holdings"
 
-    coins = Coin.coins
+    plot.close()
+
+    coins = user.coins
 
     pc = Coin.total_now * 0.01
 
-    outs = [
-        coin for coin in coins if coin.total
-        and coin.total < 4.6*pc
+    others = [
+        coin for coin in coins
+        if coin.total and coin.total < 4.9*pc
         ]
+    othersum = sum(coin.total for coin in others)
 
-    others = sum(coin.total for coin in outs)
-
-    labels = [coin for coin in coins if coin not in outs]
+    labels = [coin for coin in coins if coin not in others]
     random.shuffle(labels)
 
-    sizes = [coin.total for coin in labels]
+    sizes = [float('{:.2f}'.format(coin.total)) for coin in labels]
 
     if others:
 
-        if len(outs) > 1:
-            strouts = ', '.join(str(out) for out in outs)
-            labels.append('\n\nOthers\n(' + strouts + ')')
-            sizes.append(float('{:.2f}'.format(others)))
+        if len(others) > 1:
+            strothers = ', '.join(str(other) for other in others)
+            labels.append('Others\n(' + strothers + ')')
+            sizes.append(float('{:.2f}'.format(othersum)))
         else:
-            uno = outs[0]
+            uno = others[0]
             labels.append(str(uno))
-            sizes.append(uno.total)
+            sizes.append(float('{:2f}'.format(uno.total)))
 
     boom = [
-        0.4 if wedge < 5*pc else
+        0.4 if wedge < 6*pc else
         0.2 if wedge < 10*pc else
         0.1 if wedge < 20*pc else
         0.0 for wedge in sizes
         ]
 
     colors = [
-        'red', 'tan', 'powderblue',
+        'palevioletred', 'khaki', 'powderblue',
         'green', 'olive', 'purple',
         'silver', 'springgreen', 'orange',
-        'deepskyblue', 'yellow',
-        'blue', 'papayawhip',
+        'deepskyblue', 'yellow', 'coral',
+        'blue', 'papayawhip', 'red',
         ]
 
-    fig = pyplot.figure()
-    fig.canvas.set_window_title('your cryptolio pie')
-    fig.set_facecolor('palegreen')
+    plot.figure(0).canvas.set_window_title(
+        'your cryptolio pie '
+        + time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
+        )
+    plot.figure(0).set_facecolor('palegreen')
 
-    _, __, wedgetext = pyplot.pie(
+    _, __, wedgetext = plot.pie(
         sizes, labels=labels, colors=colors, explode=boom,
         wedgeprops={'linewidth': 2, 'edgecolor': 'darkorange'},
         autopct='', startangle=275, #shadow=True,
         )
 
-    for i, wedge in enumerate(wedgetext):
-
-        wedge.set_text(
-            "${}\n{:.1f}%".format(sizes[i], sizes[i] / pc)
-            if
-            Coin.show_pie_totals
-            else
-            "{:.1f}%".format(sizes[i] / pc)
+    for wedge, text in enumerate(wedgetext):
+        size = sizes[wedge]
+        text.set_text(
+            "${0:.2f}\n{1:.1f}%".format(size, size/pc)
+            if user.window.show_pie_totals
+            else "{:.1f}%".format(size/pc)
             )
 
-    pyplot.axis('equal')
-    pyplot.show()
+    plot.axis('equal')
+
+    plot.show(block=False)
 
 
-def wait_a_bit(more):
-    if more < 2: more = 2
-    print('[..wait {} secs..]'.format(more))
+def windolio():
 
+    window = user.window
 
-def refresh_it():
-    watch = time.time() - Coin.time
-    if watch < 60:
-        wait_a_bit(int(60-watch))
-    else:
-        Coin.data = lookup()
-        if Coin.data is not None:
-            Coin.reset()
-            Coin.coins = pandora()
-            print('[data updated]')
-            windolio()
-
-
-def toggle():
-    if Coin.show_pie_totals:
-        Coin.show_pie_totals = 0
-        print('[pie values off]')
-    else:
-        Coin.show_pie_totals = 1
-        print('[pie values on]')
-    windolio('togg')
-
-
-def windolio(what='all'):
-
-    window = Coin.window
-
-    columns = [ # keep in blocks, can switch blocks
-        'Rank', 'Price Now', 'Name', #leave rank, can switch other 2
-        #'Price Paid', 'Profit Per', #block
-        '1 Hour', '1 Day', '1 Week', #block
-        'Holding', #block
-        'Spent', 'Value', 'Profit', #block
+    window.columns = [ # keep in blocks
+        'Rank', 'Price Now', 'Name', #keep rank first, can switch name/price
+        #'Price Paid', 'Profit Per', #can switch both
+        '1 Hour', '1 Day', '1 Week', #can switch all
+        'Holding',                   #singleton block
+        'Spent', 'Value', 'Profit',  #keep spent first, can switch value/profit
         ]
 
 
     def print_columns():
-        """Column Headers, Row 0"""
-        nonlocal columns
-        for col_num, col_name in enumerate(columns):
-            header = Label(window, text=col_name, font='bold',
-                           bg=['yellow3', 'gold3'][col_num%2])
+        "Column Headers, Row 0"
+        for col_num, col_name in enumerate(window.columns):
+            header = Label(
+                window, text=col_name, font='bold',
+                bg=['yellow3', 'gold3'][col_num % 2]
+            )
             header.grid(row=0, column=col_num, sticky=N+S+E+W)
 
 
     def print_rows():
-        """Coin Entries, Row 1 ->"""
-        nonlocal columns
-        Coin.row = 1
-        for coin in Coin.coins:
-            for col_num, col_name in enumerate(columns):
+        "Coin Entries, Row 1 ->"
+        window.row = 1
+        for coin in user.coins:
+            for col_num, col_name in enumerate(window.columns):
+                val = coin.columns[col_name]
                 cell = Label(
                     window,
-                    text=coin.columns[col_name],
-                    fg=('black'
-                        if not col_name.startswith('1')
-                        else 'red'
-                        if float(coin.columns[col_name][:-2]) < 0
-                        else 'green'
-                        ),
-                    bg=['yellow2', 'gold2'][col_num%2]
+                    text=(val if col_name not in [
+                        'Price Now', 'Spent', 'Value', 'Profit']
+                          else '${:.2f}'.format(val) if val > 1 or val < -1
+                          else '${}'.format(val)),
+                    fg=('black' if not col_name.startswith('1')
+                        else 'red' if float(val[:-2]) < 0
+                        else 'green'),
+                    bg=['yellow2', 'gold2'][col_num % 2]
                     )
-                cell.grid(row=Coin.row, column=col_num, sticky=N+S+E+W)
-            Coin.row += 1
+                cell.grid(row=window.row, column=col_num, sticky=N+S+E+W)
+            window.row += 1
 
 
-    def print_spent():
-        """Totals"""
-        nonlocal columns
+    def print_totals():
+        col_num = window.columns.index('Spent')
+
         coin_totals = [
             ('Total Spent',
              '${:.2f}'.format(Coin.total_paid)),
@@ -266,144 +253,177 @@ def windolio(what='all'):
             ('Total Profit',
              '${:.2f}'.format(Coin.total_now - Coin.total_paid)),
             ]
-        the_col = columns.index('Spent')
+
         for label, amount in coin_totals:
             cell = Label(window, text=label, bg='silver')
-            cell.grid(row=Coin.row, column=the_col, sticky=S, pady=5)
+            cell.grid(row=window.row, column=col_num, sticky=S, pady=5)
             cell = Label(
                 window, text=amount, bg='silver',
-                font=('bold' if 'Value' in label else None))
-            cell.grid(row=Coin.row+1, column=the_col, sticky=N)
-            the_col += 1
+                font=('bold' if 'Value' in label else None)
+                )
+            cell.grid(row=window.row+1, column=col_num, sticky=N)
+            col_num += 1
 
 
     def refresh_button():
-        nonlocal columns
-        col_num = columns.index('Rank')
+        col_num = window.columns.index('Rank')
 
         refresh = Button(
-        window, text='Refresh', bg='silver', command=refresh_it
-        )
-        refresh.grid(row=Coin.row+1, column=col_num, padx=5, pady=5)
+            window, text='Refresh', bg='silver',
+            command=refresh_it
+            )
+        refresh.grid(row=window.row+1, column=col_num, padx=5, pady=5)
 
         note = Label(window, text="(once per minute)", fg='grey55')
-        note.grid(row=Coin.row+1, column=col_num+1)
+        note.grid(row=window.row+1, column=col_num+1, sticky=S)
+
+
+    def cmc_button():
+        col_num = window.columns.index('Rank')
+
+        cmc = Button(
+            window, text='Visit CMC', bg='silver',
+            command=lambda: web.open('https://coinmarketcap.com', new=2)
+            )
+        cmc.grid(row=window.row, column=col_num, padx=5, pady=5)
+
+        globe = Label(
+            window, text="Global Cap", fg='grey55')
+        globe.grid(row=window.row, column=col_num+2, sticky=S)
+
+        globe_cap = Label(
+            window,
+            text='${:.1f} Bil'.format(Coin.globe/1000000000), fg='grey55'
+            )
+        globe_cap.grid(row=window.row+1, column=col_num+2, sticky=N)
 
 
     def pie_buttons():
-        """Pie of Holdings"""
-        nonlocal columns
-        the_col = columns.index('Holding')
+        col_num = window.columns.index('Holding')
 
-        # Make Pie Button
-        graph = Button(
-            window, text="Make Pie", bg='silver', command=pie
-            )
-        graph.grid(row=Coin.row+1, column=the_col)
+        makepie = Button(window, text="Make Pie", bg='silver', command=pie)
+        makepie.grid(row=window.row+1, column=col_num)
 
-        # Toggle Pie dollar values
         tog = Button(
-            window, text=(
-                "Pie $ on"
-                if
-                Coin.show_pie_totals
-                else
-                "Pie $ off"
-                ),
+            window,
+            text=("Pie $ on" if window.show_pie_totals
+                  else "Pie $ off"),
             bg='silver', command=toggle
             )
-        tog.grid(row=Coin.row, column=the_col, padx=5, pady=5)
+        tog.grid(row=window.row, column=col_num, padx=5, pady=5)
+
+
+    def toggle():
+        if window.show_pie_totals:
+            window.show_pie_totals = 0
+            print('[pie values off]')
+        else:
+            window.show_pie_totals = 1
+            print('[pie values on]')
+        pie_buttons()
+
+
+    def refresh_it():
+        window.title(windowtitle())
+        watch = time.time() - Coin.time
+        if watch < 60:
+            print('[..wait {} secs..]'.format(
+                int(60-watch if watch > 2 else 2)))
+        else:
+            Coin.data = lookup()
+            if Coin.data:
+                Coin.reset()
+                pandora()
+                print('[data updated]')
+                windolio()
 
 
     includes = {
-        'Spent': print_spent,
-        'Rank': refresh_button,
-        'Holding': pie_buttons
+        'Spent': [print_totals],
+        'Rank': [refresh_button, cmc_button],
+        'Holding': [pie_buttons],
         }
 
-    loads = [
-        print_columns, print_rows
-        ]
+    loads = [print_columns, print_rows]
 
-    for include in includes:
-        if include in columns:
-            loads.append(includes[include])
+    for col, include in includes.items():
+        if col in window.columns:
+            loads += include
 
-    if what == 'all':
-        for load in loads:
-            load()
-    elif what == 'togg':
-        pie_buttons()
-    else:
-        print('whatchoo talkin bout willis')
+    for load in loads:
+        load()
 
-# Gooey
     window.mainloop()
 
     return bye
 
 
-def printscreen():
-
-    print('---------------------------')
-
-    for coin in Coin.coins:
-
-        print(coin)
-        print(' Price: $' + str(coin.price_now))
-        print(' Rank:', coin.rank)
-        print(' Holding:', coin.holding)
-        print(' Paid: ${0:.2f}'.format(coin.paid))
-        print(' Now: ${}'.format(coin.total))
-        print('---------------------------')
-
-    print()
-    print('Portfolio value: ${0:.2f}'.format(Coin.total_now))
-    print('Portfolio profit: ${0:.2f}'.format(
-        Coin.total_now - Coin.total_paid))
-    print('---------------------------')
-    print()
-
-
 def pandora():
-
-    # box = []
-    # for coin in Coin.data:
-        # for mycoin in Coin.folio:
-            # if mycoin['symbol'] == coin['symbol']:
-                # box.append(Coin(mycoin, coin))
-
-    box = [
+    user.coins = [
         Coin(mycoin, coin)
         for coin in Coin.data
-        for mycoin in Coin.folio
-        if mycoin['symbol']
-        == coin['symbol']
+        for mycoin in user.folio
+        if mycoin['symbol'] == coin['symbol']
         ]
 
-    return box
 
-
-def lookup():
+def lookup(choose='CMC'):
 
     lookups = {
-        'CoinMarketCap':
+        'CMC':
         'https://api.coinmarketcap.com/v1/ticker/?start=0&limit=500',
+        'Globe':
+        'https://api.coinmarketcap.com/v1/global/',
         }
-    chose = lookups['CoinMarketCap']
+
+    chose = lookups[choose]
 
     try:
         data = requests.get(chose)
         return data.json()
     except:
-        print('Cannot update - Try later')
+        print('\nCannot update\n')
 
 
 def folio():
     'something for now'
 
-    clr(2)
-    # porto = []
+    try:
+        with open('cryptdata', 'rb') as jar:
+            return pickle.load(jar)
+    except: pass
+
+    print(
+        '''
+
+    Hi
+
+    I see you're new here
+
+    Choose an option
+
+        1 - Check out CrYpToLiO with sample data
+
+        2 - Add your own portfolio
+
+'''
+    )
+
+    time.sleep(3)
+
+    print(
+        '''
+
+chose 1 for now..
+
+sample data used..
+
+'''
+        )
+
+    time.sleep(2)
+
+    #chose = input('1 or 2? ')
 
     # print(
         # ''' intro stuff
@@ -431,22 +451,22 @@ def folio():
     sample_porto = [
         {
             'symbol': 'BTC',
-            'holding': 0.42,
+            'holding': 0.23,
             'price_paid': 5000
         },
         {
             'symbol': 'LTC',
-            'holding': 1,
+            'holding': 1.23,
             'price_paid': 140
         },
         {
             'symbol': 'ETH',
-            'holding': 1,
+            'holding': 3,
             'price_paid': 350
         },
         {
             'symbol': 'XMR',
-            'holding': 1,
+            'holding': 4,
             'price_paid': 150
         },
         {
@@ -456,34 +476,54 @@ def folio():
         },
         {
             'symbol': 'XRP',
-            'holding': 2100,
-            'price_paid': 0.50
+            'holding': 2300,
+            'price_paid': 0.75
         },
         {
             'symbol': 'ZRX',
-            'holding': 230,
+            'holding': 150,
             'price_paid': 1.00
         },
         {
             'symbol': 'XLM',
             'holding': 1000,
-            'price_paid': 0.25
+            'price_paid': 0.42
         },
-        ]
+    ]
+
+    clr(2)
 
     porto = sample_porto
     return porto
 
 
+def printscreen():
+    print('---------------------------')
+    for coin in user.coins:
+        print(coin.name)
+        print(' Price: $' + str(coin.price_now))
+        print(' Rank:', coin.rank)
+        print(' Holding:', coin.holding)
+        print(' Paid: ${0:.2f}'.format(coin.paid))
+        print(' Now: ${}'.format(coin.total))
+        print('---------------------------')
+        time.sleep(0.23)
+    print()
+    print('Portfolio value: ${0:.2f}'.format(Coin.total_now))
+    print('Portfolio profit: ${0:.2f}'.format(
+        Coin.total_now - Coin.total_paid))
+    print('---------------------------')
+    print()
+    return windolio
+
+
 def step():
     Coin.data = lookup()
-    if Coin.data is None:
-        return bye
-    Coin.folio = folio()
-    Coin.coins = pandora()
-    Coin.window = makewindow()
-    printscreen()
-    return windolio
+    if Coin.data is None: return bye
+    Coin.globe = lookup('Globe')["total_market_cap_usd"]
+    if Coin.globe is None: return bye
+    pandora()
+    return printscreen
 
 
 def main(dance=step):
