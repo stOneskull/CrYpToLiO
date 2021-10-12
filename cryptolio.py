@@ -29,6 +29,7 @@ from coin import Coin
 
 Heart = True
 
+
 class Champ:
     def __init__(self):
         self.makewindow()
@@ -67,6 +68,7 @@ def bye():
     except: pass
     print('\nbye now\n')
 
+
 def pie():
     "Holdings"
 
@@ -85,18 +87,18 @@ def pie():
     labels = [coin for coin in coins if coin not in others]
     random.shuffle(labels)
 
-    sizes = [float('{:.2f}'.format(coin.total)) for coin in labels]
+    sizes = [float(f'{coin.total:.2f}') for coin in labels]
 
     if others:
 
         if len(others) > 1:
             strothers = ', '.join(str(other) for other in others)
             labels.append('Others\n(' + strothers + ')')
-            sizes.append(float('{:.2f}'.format(othersum)))
+            sizes.append(float(f'{othersum:.2f}'))
         else:
             uno = others[0]
             labels.append(str(uno))
-            sizes.append(float('{:2f}'.format(uno.total)))
+            sizes.append(float(f'{uno.total:2f}'))
 
     boom = [
         0.4 if wedge < 6*pc else
@@ -119,7 +121,7 @@ def pie():
         )
     plot.figure(0).set_facecolor('palegreen')
 
-    _, __, wedgetext = plot.pie(
+    _, _, wedgetext = plot.pie(
         sizes, labels=labels, colors=colors, explode=boom,
         wedgeprops={'linewidth': 2, 'edgecolor': 'darkorange'},
         autopct='', startangle=275, #shadow=True,
@@ -128,13 +130,12 @@ def pie():
     for wedge, text in enumerate(wedgetext):
         size = sizes[wedge]
         text.set_text(
-            "${0:.2f}\n{1:.1f}%".format(size, size/pc)
+            f'${size:.2f}\n{size/pc:.1f}%'
             if user.window.show_pie_totals
-            else "{:.1f}%".format(size/pc)
+            else f'{size/pc:.1f}%'
             )
 
     plot.axis('equal')
-
     plot.show(block=False)
 
 
@@ -171,8 +172,8 @@ def windolio():
                     window,
                     text=(val if col_name not in [
                         'Price Now', 'Spent', 'Value', 'Profit']
-                          else '${:.2f}'.format(val) if val > 1 or val < -1
-                          else '${}'.format(val)),
+                          else f'${val:.2f}' if val > 1 or val < -1
+                          else f'${val}'),
                     fg=('black' if not col_name.startswith('1')
                         else 'red' if float(val[:-2]) < 0
                         else 'green'),
@@ -186,12 +187,9 @@ def windolio():
         col_num = window.columns.index('Spent')
 
         coin_totals = [
-            ('Total Spent',
-             '${:.2f}'.format(Coin.total_paid)),
-            ('Total Value',
-             '${:.2f}'.format(Coin.total_now)),
-            ('Total Profit',
-             '${:.2f}'.format(Coin.total_now - Coin.total_paid)),
+            ('Total Spent', f'${Coin.total_paid:.2f}'),
+            ('Total Value', f'${Coin.total_now:.2f}'),
+            ('Total Profit', f'${Coin.total_now - Coin.total_paid:.2f}'),
             ]
 
         for label, amount in coin_totals:
@@ -232,8 +230,7 @@ def windolio():
         globe.grid(row=window.row, column=col_num+2, sticky=S)
 
         globe_cap = Label(
-            window,
-            text='${:.1f} Bil'.format(Coin.globe/1000000000), fg='grey55'
+            window, text='${Coin.globe/1e9:.1f} Bil', fg='grey55'
             )
         globe_cap.grid(row=window.row+1, column=col_num+2, sticky=N)
 
@@ -267,8 +264,9 @@ def windolio():
         window.title(user.windowtitle())
         watch = time.time() - Coin.time
         if watch < 60:
-            print('[..wait {} secs..]'.format(
-                int(60-watch if watch > 2 else 2)))
+            print(
+                f'[..wait {int(60-watch if watch > 2 else 2)} secs..]'
+                )
         else:
             Coin.data = lookup()
             if Coin.data:
@@ -443,17 +441,16 @@ def printscreen():
     print('---------------------------')
     for coin in user.coins:
         print(coin.name)
-        print(' Price: $' + str(coin.price_now))
+        print(f' Price: ${coin.price_now}')
         print(' Rank:', coin.rank)
         print(' Holding:', coin.holding)
-        print(' Paid: ${0:.2f}'.format(coin.paid))
-        print(' Now: ${}'.format(coin.total))
+        print(f' Paid: ${coin.paid:.2f}')
+        print(f' Now: ${coin.total}')
         print('---------------------------')
         time.sleep(0.23)
     print()
-    print('Portfolio value: ${0:.2f}'.format(Coin.total_now))
-    print('Portfolio profit: ${0:.2f}'.format(
-        Coin.total_now - Coin.total_paid))
+    print(f'Portfolio value: ${Coin.total_now:.2f}')
+    print(f'Portfolio profit: ${Coin.total_now - Coin.total_paid:.2f}')
     print('---------------------------')
     print()
     return windolio
