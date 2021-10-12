@@ -1,95 +1,57 @@
-#!/usr/bin/env python3
-
 #############################
  ####     CrYpToLiO     ####
   ####  by stOneskull  ####
    #######################
   ###### inspired by ######
  ####### codemy.com  #######
-##2018#################2018##
+##2018#################2021##
 
 """ Funky Portfolio for Cryptocurrency """
 
-__version__ = '0.3.1'
+__version__ = '0.5.0'
 
 ########### - intro, settings
 ## to do ## - user input for folio details
 ########### - user configurability
 
-
 from tkinter import Tk, PhotoImage, N, E
 from tkinter import Label, Button, W, S
-from matplotlib import pyplot as plot
 import webbrowser as web
-import requests
+import time
 import random
 import pickle
-import time
+
+import requests
+from matplotlib import pyplot as plot
+
+from coin import Coin
 
 
 Heart = True
 
-
-class Coin:
-    """ machina """
-    time = time.time()
-    total_paid = 0
-    total_now = 0
-
-    def __init__(self, mycoin, jsoncoin):
-
-        self.name = jsoncoin['name']
-        self.rank = jsoncoin['rank']
-        self.price_now = float(jsoncoin['price_usd'])
-
-        self.holding = float(mycoin['holding'])
-        self.price_paid = float(mycoin['price_paid'])
-
-        self.profit_per = (
-            '{:.2f}'.format(self.price_now - self.price_paid)
-            if self.holding else 0
-        )
-
-        self.one_hour = '{:.2f}%'.format(float(jsoncoin['percent_change_1h']))
-        self.one_day = '{:.2f}%'.format(float(jsoncoin['percent_change_24h']))
-        self.one_week = '{:.2f}%'.format(float(jsoncoin['percent_change_7d']))
-
-        self.total = float('{:.2f}'.format(self.holding * self.price_now))
-        self.paid = float('{:.2f}'.format(self.holding * self.price_paid))
-        self.profit = float('{:.2f}'.format(self.total - self.paid))
-
-        Coin.total_paid += self.paid
-        Coin.total_now += self.total
-
-        self.columns = {
-            'Name': self.name,
-            'Rank': self.rank,
-            'Holding': self.holding,
-            'Price Now': self.price_now,
-            'Price Paid': self.price_paid,
-            'Profit Per': self.profit_per,
-            '1 Hour': self.one_hour,
-            '1 Day': self.one_day,
-            '1 Week': self.one_week,
-            'Spent': self.paid,
-            'Value': self.total,
-            'Profit': self.profit,
-            }
-
-    def __repr__(self):
-        return self.name
-
-    @staticmethod
-    def reset():
-        Coin.total_paid = 0
-        Coin.total_now = 0
-        Coin.time = time.time()
-
-
 class Champ:
     def __init__(self):
-        self.window = makewindow()
+        self.makewindow()
         self.folio = folio()
+
+    def makewindow(self):
+        window = Tk()
+        window.title(self.windowtitle())
+        window.row = 0
+        window.show_pie_totals = 0
+        try:
+            icon = PhotoImage(file='swirl.gif')
+            window.tk.call('wm', 'iconphoto', window._w, icon)
+        except: pass
+        self.window = window
+
+    def windowtitle(self):
+        return(
+            ". .... .. CrYpToLiO .. ... " + __version__
+            + time.strftime(
+                " .. ... %Y-%m-%d %H:%M:%S ... ", time.localtime()
+                )
+            )
 
 
 def clr(lines=99):
@@ -104,28 +66,6 @@ def bye():
             pickle.dump(user.folio, jar)
     except: pass
     print('\nbye now\n')
-
-
-def windowtitle():
-    return(
-        ". .... .. CrYpToLiO .. ... " + __version__
-        + time.strftime(
-            " .. ... %Y-%m-%d %H:%M:%S ... ", time.localtime()
-            )
-        )
-
-
-def makewindow():
-    window = Tk()
-    window.title(windowtitle())
-    window.row = 0
-    window.show_pie_totals = 0
-    try:
-        icon = PhotoImage(file='swirl.gif')
-        window.tk.call('wm', 'iconphoto', window._w, icon)
-    except: pass
-    return window
-
 
 def pie():
     "Holdings"
@@ -324,7 +264,7 @@ def windolio():
 
 
     def refresh_it():
-        window.title(windowtitle())
+        window.title(user.windowtitle())
         watch = time.time() - Coin.time
         if watch < 60:
             print('[..wait {} secs..]'.format(
@@ -490,6 +430,8 @@ sample data used..
             'price_paid': 0.42
         },
     ]
+
+    # Just change the sample data to your own for now
 
     clr(2)
 
