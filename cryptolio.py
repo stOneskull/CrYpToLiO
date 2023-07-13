@@ -273,7 +273,10 @@ def windolio():
                 Coin.reset()
                 pandora()
                 print('[data updated]')
+
+                # i think we have a problem
                 windolio()
+                # but i think i gotta fix the api stuff first
 
 
     includes = {
