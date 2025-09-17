@@ -8,11 +8,12 @@
 
 """ Funky Portfolio for Cryptocurrency """
 
-__version__ = '0.5.0'
+__version__ = '0.6.0'
 
 ########### - intro, settings
 ## to do ## - user input for folio details
 ########### - user configurability
+
 
 from tkinter import Tk, PhotoImage, N, E
 from tkinter import Label, Button, W, S
@@ -115,7 +116,7 @@ def pie():
         'blue', 'papayawhip', 'red',
         ]
 
-    plot.figure(0).canvas.set_window_title(
+    plot.figure(0).canvas.manager.set_window_title(
         'your cryptolio pie '
         + time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
         )
@@ -276,7 +277,6 @@ def windolio():
 
                 # i think we have a problem
                 windolio()
-                # but i think i gotta fix the api stuff first
 
 
     includes = {
@@ -302,28 +302,10 @@ def windolio():
 def pandora():
     user.coins = [
         Coin(mycoin, coin)
-        for coin in Coin.data
+        for coin in Coin.data['data']
         for mycoin in user.folio
         if mycoin['symbol'] == coin['symbol']
         ]
-
-
-def lookup(choose='CMC'):
-
-    lookups = {
-        'CMC':
-        'https://api.coinmarketcap.com/v1/ticker/?start=0&limit=500',
-        'Globe':
-        'https://api.coinmarketcap.com/v1/global/',
-        }
-
-    chose = lookups[choose]
-
-    try:
-        data = requests.get(chose)
-        return data.json()
-    except:
-        print('\nCannot update\n')
 
 
 def folio():
@@ -459,10 +441,32 @@ def printscreen():
     return windolio
 
 
+def lookup(choose='CoinLore'):
+
+    lookups = {
+        'CoinLore':
+        'https://api.coinlore.net/api/tickers/?start=0&limit=500',
+        'Globe':
+        'https://api.coinlore.net/api/global/',
+        }
+    '''
+    Description: To get information for a specific coin, you should pass coin id (You should use the id from the tickers endpoint)
+    Request URL: https://api.coinlore.net/api/ticker/?id=90 (BTC)
+    Request URL: https://api.coinlore.net/api/ticker/?id=80 (ETH)
+    Multiple coins: https://api.coinlore.net/api/ticker/?id=90,80 (BTC and ETH)
+    '''
+    chose = lookups[choose]
+
+    try:
+        data = requests.get(chose)
+        return data.json()
+    except:
+        print('\nCannot update\n')
+
 def step():
     Coin.data = lookup()
     if Coin.data is None: return bye
-    Coin.globe = lookup('Globe')["total_market_cap_usd"]
+    Coin.globe = lookup('Globe').pop()["total_mcap"]
     if Coin.globe is None: return bye
     pandora()
     return printscreen
