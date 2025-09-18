@@ -8,7 +8,7 @@
 
 """ Funky Portfolio for Cryptocurrency """
 
-__version__ = '0.6.0'
+__version__ = '0.6.1'
 
 ########### - intro, settings
 ## to do ## - user input for folio details
@@ -231,7 +231,7 @@ def windolio():
         globe.grid(row=window.row, column=col_num+2, sticky=S)
 
         globe_cap = Label(
-            window, text='${Coin.globe/1e9:.1f} Bil', fg='grey55'
+            window, text=f'${Coin.globe/1e9:.1f} Bil', fg='grey55'
             )
         globe_cap.grid(row=window.row+1, column=col_num+2, sticky=N)
 
@@ -274,8 +274,6 @@ def windolio():
                 Coin.reset()
                 pandora()
                 print('[data updated]')
-
-                # i think we have a problem
                 windolio()
 
 
